@@ -226,6 +226,21 @@ Json::Value collectEVMObject(eth::LinkerObject const& _object, string const* _so
 	return output;
 }
 
+Json::Value compileYul(Json::Value const& _input)
+{
+	if (!_input["source"].isString())
+		return formatFatalError("JSONError", "Source missing.");
+
+	Json::Value output;
+	Yul::AST ast = Yul::Parser(_input["source"]);
+	output["yul"] = Yul::Printer(ast);
+	output["evm"] = Yul::EVM::Codegen(ast);
+	output["evm15"] = Yul::EVM15::Codegen(ast);
+	output["ewasm"] = Json::objectValue;
+	output["ewasm"]["wast"] = Yul::WebAssembly::Codegen(ast));
+	return output;
+}
+
 }
 
 Json::Value StandardCompiler::compileInternal(Json::Value const& _input)
@@ -235,8 +250,11 @@ Json::Value StandardCompiler::compileInternal(Json::Value const& _input)
 	if (!_input.isObject())
 		return formatFatalError("JSONError", "Input is not a JSON object.");
 
+	if (_input["language"] == "Yul")
+		return compileYul(_input);
+
 	if (_input["language"] != "Solidity")
-		return formatFatalError("JSONError", "Only \"Solidity\" is supported as a language.");
+		return formatFatalError("JSONError", "Only \"Solidity\" or \"Yul\" is supported as a language.");
 
 	Json::Value const& sources = _input["sources"];
 
