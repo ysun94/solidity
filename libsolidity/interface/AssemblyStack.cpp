@@ -33,6 +33,7 @@
 
 #include <libyul/backends/evm/EVMCodeTransform.h>
 #include <libyul/backends/evm/EVMAssembly.h>
+#include <libyul/backends/webassembly/WebAssembly.h>
 
 using namespace std;
 using namespace dev;
@@ -124,7 +125,10 @@ MachineAssemblyObject AssemblyStack::assemble(Machine _machine) const
 		return object;
 	}
 	case Machine::eWasm:
-		solUnimplemented("eWasm backend is not yet implemented.");
+		MachineAssemblyObject object;
+		object.assembly = yul::WebAssembly().assemble(*m_parserResult);
+		/// TODO: fill out the bytecode
+		return object;
 	}
 	// unreachable
 	return MachineAssemblyObject();
