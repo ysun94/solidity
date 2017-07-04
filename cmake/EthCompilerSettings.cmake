@@ -87,6 +87,12 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdata-sections -ffunction-sections -Wl,--gc-sections -fvisibility=hidden")
 			# Optimisation level
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+			# Add runtime guards for memory allocation errors
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s ASSERTIONS=1")
+			# Additional checks for memory access (such as dereferencing 0)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s SAFE_HEAP=1")
+			# Stack overflow check with a canary
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s STACK_OVERFLOW_CHECK=1")
 			# Re-enable exception catching (optimisations above -O1 disable it)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s DISABLE_EXCEPTION_CATCHING=0")
 			# Remove any code related to exit (such as atexit)
