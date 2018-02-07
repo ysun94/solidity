@@ -8,3 +8,6 @@ add_executable(isoltest isoltest.cpp ../Options.cpp ../Common.cpp ../libsolidity
         ../libsolidity/AnalysisFramework.cpp ../libsolidity/SolidityExecutionFramework.cpp ../ExecutionFramework.cpp
         ../RPCSession.cpp ../libsolidity/ASTJSONTest.cpp ../libyul/YulOptimizerTest.cpp)
 target_link_libraries(isoltest PRIVATE libsolc solidity evmasm ${Boost_PROGRAM_OPTIONS_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARIES})
+
+add_executable(iuliarun iuliarun.cpp)
+target_link_libraries(iuliarun PRIVATE libsolc evmasm ${Boost_PROGRAM_OPTIONS_LIBRARIES})
