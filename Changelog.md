@@ -11,6 +11,10 @@ Compiler Features:
 Bugfixes:
 
 
+Build System:
+ * Emscripten: Upgrade to Emscripten SDK 1.38.8 and boost 1.67.
+
+
 ### 0.5.1 (2018-12-03)
 
 Language Features:
