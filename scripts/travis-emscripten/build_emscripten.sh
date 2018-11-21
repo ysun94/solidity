@@ -96,6 +96,14 @@ cmake \
 make -j 4
 
 cd ..
+
+md5sum build/libsolc/soljson.js
+
+# Remove debug message "NO_DYNAMIC_EXECUTION was set, using slow cwrap implementation"
+sed -i "s/Runtime\.warnOnce('NO_DYNAMIC_EXECUTION was set,'/if (false) Runtime\.warnOnce('NO_DYNAMIC_EXECUTION was set'/" build/libsolc/soljson.js
+
+md5sum build/libsolc/soljson.js
+
 mkdir -p upload
 cp build/libsolc/soljson.js upload/
 cp build/libsolc/soljson.js ./
