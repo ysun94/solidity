@@ -61,7 +61,7 @@ void VariableReferenceCounter::operator()(ForLoop const& _forLoop)
 	m_scope = m_info.scopes.at(&_forLoop.pre).get();
 
 	walkVector(_forLoop.pre.statements);
-	visit(*_forLoop.condition);
+	visit(_forLoop.condition);
 	(*this)(_forLoop.body);
 	(*this)(_forLoop.post);
 
@@ -229,7 +229,7 @@ void CodeTransform::operator()(VariableDeclaration const& _varDecl)
 void CodeTransform::operator()(Assignment const& _assignment)
 {
 	int height = m_assembly.stackHeight();
-	boost::apply_visitor(*this, *_assignment.value);
+	boost::apply_visitor(*this, _assignment.value);
 	expectDeposit(_assignment.variableNames.size(), height);
 
 	m_assembly.setSourceLocation(_assignment.location);
@@ -412,7 +412,7 @@ void CodeTransform::operator()(yul::Instruction const& _instruction)
 
 void CodeTransform::operator()(If const& _if)
 {
-	visitExpression(*_if.condition);
+	visitExpression(_if.condition);
 	m_assembly.setSourceLocation(_if.location);
 	m_assembly.appendInstruction(solidity::Instruction::ISZERO);
 	AbstractAssembly::LabelID end = m_assembly.newLabelId();
@@ -427,7 +427,7 @@ void CodeTransform::operator()(Switch const& _switch)
 {
 	//@TODO use JUMPV in EVM1.5?
 
-	visitExpression(*_switch.expression);
+	visitExpression(_switch.expression);
 	int expressionHeight = m_assembly.stackHeight();
 	map<Case const*, AbstractAssembly::LabelID> caseBodies;
 	AbstractAssembly::LabelID end = m_assembly.newLabelId();
@@ -585,7 +585,7 @@ void CodeTransform::operator()(ForLoop const& _forLoop)
 	m_assembly.setSourceLocation(_forLoop.location);
 	m_assembly.appendLabel(loopStart);
 
-	visitExpression(*_forLoop.condition);
+	visitExpression(_forLoop.condition);
 	m_assembly.setSourceLocation(_forLoop.location);
 	m_assembly.appendInstruction(solidity::Instruction::ISZERO);
 	m_assembly.appendJumpToIf(loopEnd);

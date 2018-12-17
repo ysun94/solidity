@@ -54,7 +54,7 @@ void SSATransform::operator()(ForLoop& _for)
 	for (auto const& var: assignments.names())
 		m_currentVariableValues.erase(var);
 
-	visit(*_for.condition);
+	visit(_for.condition);
 	(*this)(_for.body);
 	(*this)(_for.post);
 }
@@ -66,13 +66,13 @@ void SSATransform::operator()(Block& _block)
 
 	// Creates a new variable (and returns its declaration) with value _value
 	// and replaces _value by a reference to that new variable.
-	auto replaceByNew = [&](SourceLocation _loc, YulString _varName, YulString _type, shared_ptr<Expression>& _value) -> VariableDeclaration
+	auto replaceByNew = [&](SourceLocation _loc, YulString _varName, YulString _type, Expression& _value) -> VariableDeclaration
 	{
 		YulString newName = m_nameDispenser.newName(_varName);
 		m_currentVariableValues[_varName] = newName;
 		variablesToClearAtEnd.emplace(_varName);
-		shared_ptr<Expression> v = make_shared<Expression>(Identifier{_loc, newName});
-		_value.swap(v);
+		Expression v = Identifier{_loc, newName};
+		_value.swap(v); // FIXME: _value was unique_ptr<Expression> !
 		return VariableDeclaration{_loc, {TypedName{_loc, std::move(newName), std::move(_type)}}, std::move(v)};
 	};
 
@@ -88,29 +88,34 @@ void SSATransform::operator()(Block& _block)
 				if (varDecl.variables.size() != 1 || !m_variablesToReplace.count(varDecl.variables.front().name))
 					return {};
 				// Replace "let a := v" by "let a_1 := v  let a := v"
-				VariableDeclaration newVarDecl = replaceByNew(
+				vector<Statement> replacement;
+				yulAssert(varDecl.value, "");
+				replacement.emplace_back(replaceByNew(
 					varDecl.location,
 					varDecl.variables.front().name,
 					varDecl.variables.front().type,
-					varDecl.value
-				);
-				return vector<Statement>{std::move(newVarDecl), std::move(varDecl)};
+					*varDecl.value
+				));
+				replacement.emplace_back(std::move(varDecl));
+				return replacement;
 			}
 			else if (_s.type() == typeid(Assignment))
 			{
 				Assignment& assignment = boost::get<Assignment>(_s);
-				visit(*assignment.value);
+				visit(assignment.value);
 				if (assignment.variableNames.size() != 1)
 					return {};
 				assertThrow(m_variablesToReplace.count(assignment.variableNames.front().name), OptimizerException, "");
 				// Replace "a := v" by "let a_1 := v  a := v"
-				VariableDeclaration newVarDecl = replaceByNew(
+				vector<Statement> replacement;
+				replacement.emplace_back(replaceByNew(
 					assignment.location,
 					assignment.variableNames.front().name,
 					{}, // TODO determine type
 					assignment.value
-				);
-				return vector<Statement>{std::move(newVarDecl), std::move(assignment)};
+				));
+				replacement.emplace_back(std::move(assignment));
+				return replacement;
 			}
 			else
 				visit(_s);

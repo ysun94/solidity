@@ -46,7 +46,7 @@ void SSAValueTracker::operator()(VariableDeclaration const& _varDecl)
 		for (auto const& var: _varDecl.variables)
 			setValue(var.name, nullptr);
 	else if (_varDecl.variables.size() == 1)
-		setValue(_varDecl.variables.front().name, _varDecl.value.get());
+		setValue(_varDecl.variables.front().name, _varDecl.value ? &_varDecl.value.value() : nullptr);
 }
 
 void SSAValueTracker::setValue(YulString _name, Expression const* _value)

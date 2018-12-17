@@ -212,11 +212,10 @@ bool AsmAnalyzer::operator()(StackAssignment const& _assignment)
 
 bool AsmAnalyzer::operator()(Assignment const& _assignment)
 {
-	solAssert(_assignment.value, "");
 	int const expectedItems = _assignment.variableNames.size();
 	solAssert(expectedItems >= 1, "");
 	int const stackHeight = m_stackHeight;
-	bool success = boost::apply_visitor(*this, *_assignment.value);
+	bool success = boost::apply_visitor(*this, _assignment.value);
 	if ((m_stackHeight - stackHeight) != expectedItems)
 	{
 		m_errorReporter.declarationError(
@@ -359,7 +358,7 @@ bool AsmAnalyzer::operator()(If const& _if)
 {
 	bool success = true;
 
-	if (!expectExpression(*_if.condition))
+	if (!expectExpression(_if.condition))
 		success = false;
 	m_stackHeight--;
 
@@ -373,11 +372,9 @@ bool AsmAnalyzer::operator()(If const& _if)
 
 bool AsmAnalyzer::operator()(Switch const& _switch)
 {
-	solAssert(_switch.expression, "");
-
 	bool success = true;
 
-	if (!expectExpression(*_switch.expression))
+	if (!expectExpression(_switch.expression))
 		success = false;
 
 	set<tuple<LiteralKind, YulString>> cases;
@@ -417,8 +414,6 @@ bool AsmAnalyzer::operator()(Switch const& _switch)
 
 bool AsmAnalyzer::operator()(ForLoop const& _for)
 {
-	solAssert(_for.condition, "");
-
 	Scope* originalScope = m_currentScope;
 
 	bool success = true;
@@ -429,7 +424,7 @@ bool AsmAnalyzer::operator()(ForLoop const& _for)
 	m_stackHeight += scope(&_for.pre).numberOfVariables();
 	m_currentScope = &scope(&_for.pre);
 
-	if (!expectExpression(*_for.condition))
+	if (!expectExpression(_for.condition))
 		success = false;
 	m_stackHeight--;
 	if (!(*this)(_for.body))

@@ -40,9 +40,8 @@ void DataFlowAnalyzer::operator()(Assignment& _assignment)
 	set<YulString> names;
 	for (auto const& var: _assignment.variableNames)
 		names.emplace(var.name);
-	assertThrow(_assignment.value, OptimizerException, "");
-	visit(*_assignment.value);
-	handleAssignment(names, _assignment.value.get());
+	visit(_assignment.value);
+	handleAssignment(names, &_assignment.value);
 }
 
 void DataFlowAnalyzer::operator()(VariableDeclaration& _varDecl)
@@ -53,7 +52,8 @@ void DataFlowAnalyzer::operator()(VariableDeclaration& _varDecl)
 	m_variableScopes.back().variables += names;
 	if (_varDecl.value)
 		visit(*_varDecl.value);
-	handleAssignment(names, _varDecl.value.get());
+
+	handleAssignment(names, _varDecl.value ? &_varDecl.value.value() : nullptr);
 }
 
 void DataFlowAnalyzer::operator()(If& _if)
@@ -67,7 +67,7 @@ void DataFlowAnalyzer::operator()(If& _if)
 
 void DataFlowAnalyzer::operator()(Switch& _switch)
 {
-	visit(*_switch.expression);
+	visit(_switch.expression);
 	set<YulString> assignedVariables;
 	for (auto& _case: _switch.cases)
 	{
@@ -120,7 +120,7 @@ void DataFlowAnalyzer::operator()(ForLoop& _for)
 	assignments(_for.post);
 	clearValues(assignments.names());
 
-	visit(*_for.condition);
+	visit(_for.condition);
 	(*this)(_for.body);
 	(*this)(_for.post);
 

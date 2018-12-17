@@ -132,7 +132,7 @@ bool ScopeFiller::operator()(ForLoop const& _forLoop)
 	if (!(*this)(_forLoop.pre))
 		success = false;
 	m_currentScope = &scope(&_forLoop.pre);
-	if (!boost::apply_visitor(*this, *_forLoop.condition))
+	if (!boost::apply_visitor(*this, _forLoop.condition))
 		success = false;
 	if (!(*this)(_forLoop.body))
 		success = false;

@@ -51,10 +51,10 @@ void StructuralSimplifier::simplify(std::vector<yul::Statement>& _statements)
 	GenericFallbackReturnsVisitor<OptionalStatements, If, Switch, ForLoop> const visitor(
 		[&](If& _ifStmt) -> OptionalStatements {
 			if (_ifStmt.body.statements.empty())
-				return {{makePopExpressionStatement(_ifStmt.location, std::move(*_ifStmt.condition))}};
-			if (expressionAlwaysTrue(*_ifStmt.condition))
+				return {{makePopExpressionStatement(_ifStmt.location, std::move(_ifStmt.condition))}};
+			if (expressionAlwaysTrue(_ifStmt.condition))
 				return {std::move(_ifStmt.body.statements)};
-			else if (expressionAlwaysFalse(*_ifStmt.condition))
+			else if (expressionAlwaysFalse(_ifStmt.condition))
 				return {vector<Statement>{}};
 			return {};
 		},
@@ -62,18 +62,18 @@ void StructuralSimplifier::simplify(std::vector<yul::Statement>& _statements)
 			if (_switchStmt.cases.size() == 1)
 			{
 				auto& switchCase = _switchStmt.cases.front();
-				auto loc = locationOf(*_switchStmt.expression);
+				auto loc = locationOf(_switchStmt.expression);
 				if (switchCase.value)
 					return {{If{
 						std::move(_switchStmt.location),
-						make_shared<Expression>(FunctionalInstruction{
+						FunctionalInstruction{
 								std::move(loc),
 								solidity::Instruction::EQ,
-								{std::move(*switchCase.value), std::move(*_switchStmt.expression)}
-						}), std::move(switchCase.body)}}};
+								{std::move(*switchCase.value), std::move(_switchStmt.expression)}
+						}, std::move(switchCase.body)}}};
 				else
 					return {{
-						makePopExpressionStatement(loc, std::move(*_switchStmt.expression)),
+						makePopExpressionStatement(loc, std::move(_switchStmt.expression)),
 						std::move(switchCase.body)
 					}};
 			}
@@ -81,7 +81,7 @@ void StructuralSimplifier::simplify(std::vector<yul::Statement>& _statements)
 				return {};
 		},
 		[&](ForLoop& _forLoop) -> OptionalStatements {
-			if (expressionAlwaysFalse(*_forLoop.condition))
+			if (expressionAlwaysFalse(_forLoop.condition))
 				return {std::move(_forLoop.pre.statements)};
 			else
 				return {};

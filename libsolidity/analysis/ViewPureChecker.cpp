@@ -56,7 +56,7 @@ public:
 	void operator()(yul::StackAssignment const&) {}
 	void operator()(yul::Assignment const& _assignment)
 	{
-		boost::apply_visitor(*this, *_assignment.value);
+		boost::apply_visitor(*this, _assignment.value);
 	}
 	void operator()(yul::VariableDeclaration const& _varDecl)
 	{
@@ -74,12 +74,12 @@ public:
 	}
 	void operator()(yul::If const& _if)
 	{
-		boost::apply_visitor(*this, *_if.condition);
+		boost::apply_visitor(*this, _if.condition);
 		(*this)(_if.body);
 	}
 	void operator()(yul::Switch const& _switch)
 	{
-		boost::apply_visitor(*this, *_switch.expression);
+		boost::apply_visitor(*this, _switch.expression);
 		for (auto const& _case: _switch.cases)
 		{
 			if (_case.value)
@@ -90,7 +90,7 @@ public:
 	void operator()(yul::ForLoop const& _for)
 	{
 		(*this)(_for.pre);
-		boost::apply_visitor(*this, *_for.condition);
+		boost::apply_visitor(*this, _for.condition);
 		(*this)(_for.body);
 		(*this)(_for.post);
 	}

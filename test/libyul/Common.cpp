@@ -74,7 +74,7 @@ pair<shared_ptr<Block>, shared_ptr<yul::AsmAnalysisInfo>> yul::test::parse(strin
 		if (analyzer.analyze(*parserResult))
 		{
 			BOOST_REQUIRE(errorReporter.errors().empty());
-			return make_pair(parserResult, analysisInfo);
+			return make_pair(make_shared<Block>(*parserResult), analysisInfo);
 		}
 	}
 	printErrors(errors);

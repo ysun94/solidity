@@ -49,13 +49,13 @@ void ExpressionSplitter::operator()(FunctionCall& _funCall)
 
 void ExpressionSplitter::operator()(If& _if)
 {
-	outlineExpression(*_if.condition);
+	outlineExpression(_if.condition);
 	(*this)(_if.body);
 }
 
 void ExpressionSplitter::operator()(Switch& _switch)
 {
-	outlineExpression(*_switch.expression);
+	outlineExpression(_switch.expression);
 	for (auto& _case: _switch.cases)
 		// Do not visit the case expression, nothing to split there.
 		(*this)(_case.body);
@@ -100,7 +100,7 @@ void ExpressionSplitter::outlineExpression(Expression& _expr)
 	m_statementsToPrefix.emplace_back(VariableDeclaration{
 		location,
 		{{TypedName{location, var, {}}}},
-		make_shared<Expression>(std::move(_expr))
+		std::move(_expr)
 	});
 	_expr = Identifier{location, var};
 }

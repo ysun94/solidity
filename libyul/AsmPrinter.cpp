@@ -134,7 +134,7 @@ string AsmPrinter::operator()(Assignment const& _assignment) const
 	string variables = (*this)(_assignment.variableNames.front());
 	for (size_t i = 1; i < _assignment.variableNames.size(); ++i)
 		variables += ", " + (*this)(_assignment.variableNames[i]);
-	return variables + " := " + boost::apply_visitor(*this, *_assignment.value);
+	return variables + " := " + boost::apply_visitor(*this, _assignment.value);
 }
 
 string AsmPrinter::operator()(VariableDeclaration const& _variableDeclaration) const
@@ -191,14 +191,12 @@ string AsmPrinter::operator()(FunctionCall const& _functionCall) const
 
 string AsmPrinter::operator()(If const& _if) const
 {
-	solAssert(_if.condition, "Invalid if condition.");
-	return "if " + boost::apply_visitor(*this, *_if.condition) + "\n" + (*this)(_if.body);
+	return "if " + boost::apply_visitor(*this, _if.condition) + "\n" + (*this)(_if.body);
 }
 
 string AsmPrinter::operator()(Switch const& _switch) const
 {
-	solAssert(_switch.expression, "Invalid expression pointer.");
-	string out = "switch " + boost::apply_visitor(*this, *_switch.expression);
+	string out = "switch " + boost::apply_visitor(*this, _switch.expression);
 	for (auto const& _case: _switch.cases)
 	{
 		if (!_case.value)
@@ -212,11 +210,10 @@ string AsmPrinter::operator()(Switch const& _switch) const
 
 string AsmPrinter::operator()(ForLoop const& _forLoop) const
 {
-	solAssert(_forLoop.condition, "Invalid for loop condition.");
 	string out = "for ";
 	out += (*this)(_forLoop.pre);
 	out += "\n";
-	out += boost::apply_visitor(*this, *_forLoop.condition);
+	out += boost::apply_visitor(*this, _forLoop.condition);
 	out += "\n";
 	out += (*this)(_forLoop.post);
 	out += "\n";

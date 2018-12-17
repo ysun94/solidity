@@ -64,7 +64,7 @@ void ExpressionInliner::visit(Expression& _expression)
 			map<YulString, Expression const*> substitutions;
 			for (size_t i = 0; i < fun.parameters.size(); ++i)
 				substitutions[fun.parameters[i].name] = &funCall.arguments[i];
-			_expression = Substitution(substitutions).translate(*boost::get<Assignment>(fun.body.statements.front()).value);
+			_expression = Substitution(substitutions).translate(boost::get<Assignment>(fun.body.statements.front()).value);
 
 			// TODO Add metric! This metric should perform well on a pair of functions who
 			// call each other recursively.

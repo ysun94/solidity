@@ -143,8 +143,8 @@ boost::optional<vector<Statement>> InlineModifier::tryInlineStatement(Statement&
 	// Only inline for expression statements, assignments and variable declarations.
 	Expression* e = boost::apply_visitor(GenericFallbackReturnsVisitor<Expression*, ExpressionStatement, Assignment, VariableDeclaration>(
 		[](ExpressionStatement& _s) { return &_s.expression; },
-		[](Assignment& _s) { return _s.value.get(); },
-		[](VariableDeclaration& _s) { return _s.value.get(); }
+		[](Assignment& _s) { return &_s.value; },
+		[](VariableDeclaration& _s) { return _s.value ? &_s.value.value() : nullptr; }
 	), _statement);
 	if (e)
 	{
@@ -177,9 +177,9 @@ vector<Statement> InlineModifier::performInline(Statement& _statement, FunctionC
 		variableReplacements[_existingVariable.name] = newName;
 		VariableDeclaration varDecl{_funCall.location, {{_funCall.location, newName, _existingVariable.type}}, {}};
 		if (_value)
-			varDecl.value = make_shared<Expression>(std::move(*_value));
+			varDecl.value = std::move(*_value);
 		else
-			varDecl.value = make_shared<Expression>(zero);
+			varDecl.value = zero;
 		newStatements.emplace_back(std::move(varDecl));
 	};
 
@@ -198,10 +198,10 @@ vector<Statement> InlineModifier::performInline(Statement& _statement, FunctionC
 				newStatements.emplace_back(Assignment{
 					_assignment.location,
 					{_assignment.variableNames[i]},
-					make_shared<Expression>(Identifier{
+					Identifier{
 						_assignment.location,
 						variableReplacements.at(function->returnVariables[i].name)
-					})
+					}
 				});
 		},
 		[&](VariableDeclaration& _varDecl)
@@ -210,7 +210,7 @@ vector<Statement> InlineModifier::performInline(Statement& _statement, FunctionC
 				newStatements.emplace_back(VariableDeclaration{
 					_varDecl.location,
 					{std::move(_varDecl.variables[i])},
-					make_shared<Expression>(Identifier{
+					Expression(Identifier{
 						_varDecl.location,
 						variableReplacements.at(function->returnVariables[i].name)
 					})
@@ -231,7 +231,16 @@ Statement BodyCopier::operator()(VariableDeclaration const& _varDecl)
 Statement BodyCopier::operator()(FunctionDefinition const& _funDef)
 {
 	assertThrow(false, OptimizerException, "Function hoisting has to be done before function inlining.");
-	return _funDef;
+	return Statement{FunctionDefinition{
+		_funDef.location,
+		_funDef.name,
+		_funDef.parameters,
+		_funDef.returnVariables,
+		{
+			_funDef.body.location,
+			_funDef.body.statements
+		}
+	}};
 }
 
 YulString BodyCopier::translateIdentifier(YulString _name)

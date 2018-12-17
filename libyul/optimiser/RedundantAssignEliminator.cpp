@@ -48,7 +48,7 @@ void RedundantAssignEliminator::operator()(VariableDeclaration const& _variableD
 
 void RedundantAssignEliminator::operator()(Assignment const& _assignment)
 {
-	visit(*_assignment.value);
+	visit(_assignment.value);
 	for (auto const& var: _assignment.variableNames)
 		changeUndecidedTo(var.name, State::Unused);
 
@@ -59,7 +59,7 @@ void RedundantAssignEliminator::operator()(Assignment const& _assignment)
 
 void RedundantAssignEliminator::operator()(If const& _if)
 {
-	visit(*_if.condition);
+	visit(_if.condition);
 
 	RedundantAssignEliminator branch{*this};
 	branch(_if.body);
@@ -69,7 +69,7 @@ void RedundantAssignEliminator::operator()(If const& _if)
 
 void RedundantAssignEliminator::operator()(Switch const& _switch)
 {
-	visit(*_switch.expression);
+	visit(_switch.expression);
 
 	bool hasDefault = false;
 	vector<RedundantAssignEliminator> branches;
@@ -120,21 +120,21 @@ void RedundantAssignEliminator::operator()(ForLoop const& _forLoop)
 	// back edge.
 	// There need not be more runs because we only have three different states.
 
-	visit(*_forLoop.condition);
+	visit(_forLoop.condition);
 
 	RedundantAssignEliminator zeroRuns{*this};
 
 	(*this)(_forLoop.body);
 	(*this)(_forLoop.post);
 
-	visit(*_forLoop.condition);
+	visit(_forLoop.condition);
 
 	RedundantAssignEliminator oneRun{*this};
 
 	(*this)(_forLoop.body);
 	(*this)(_forLoop.post);
 
-	visit(*_forLoop.condition);
+	visit(_forLoop.condition);
 
 	// Order does not matter because "max" is commutative and associative.
 	join(oneRun);
@@ -211,7 +211,7 @@ void RedundantAssignEliminator::finalize(YulString _variable)
 	for (auto& assignment: m_assignments[_variable])
 	{
 		assertThrow(assignment.second != State::Undecided, OptimizerException, "");
-		if (assignment.second == State{State::Unused} && MovableChecker{*assignment.first->value}.movable())
+		if (assignment.second == State{State::Unused} && MovableChecker{assignment.first->value}.movable())
 			// TODO the only point where we actually need this
 			// to be a set is for the for loop
 			m_assignmentsToRemove.insert(assignment.first);
