@@ -109,7 +109,12 @@ void SMTChecker::endVisit(FunctionDefinition const&)
 	if (isRootFunction())
 	{
 		for (auto const& target: m_underOverflowTargets)
-			checkUnderOverflow(get<0>(target), get<1>(target), *get<2>(target), get<3>(target));
+		{
+			if (get<4>(target))
+				checkOverflow(get<0>(target), get<1>(target), *get<2>(target), get<3>(target));
+			else
+				checkUnderflow(get<0>(target), get<1>(target), *get<2>(target), get<3>(target));
+		}
 		removeLocalVariables();
 	}
 	m_functionPath.pop_back();
@@ -302,29 +307,34 @@ void SMTChecker::endVisit(TupleExpression const& _tuple)
 		defineExpr(_tuple, expr(*_tuple.components()[0]));
 }
 
-void SMTChecker::addUnderOverflow(smt::Expression _value, TypePointer _type, SourceLocation const& _location)
+void SMTChecker::addUnderOverflow(smt::Expression _condition, TypePointer _type, SourceLocation const& _location, bool _overflow)
 {
-	m_underOverflowTargets.push_back({_value, currentPathConditions(), _type, _location});
+	m_underOverflowTargets.push_back({_condition, currentPathConditions(), _type, _location, _overflow});
 }
 
-void SMTChecker::checkUnderOverflow(smt::Expression _value, smt::Expression _path, Type const& _type, SourceLocation const& _location)
+void SMTChecker::checkUnderflow(smt::Expression _condition, smt::Expression _path, Type const& _type, SourceLocation const& _location)
 {
 	auto const& iType = dynamic_cast<IntegerType const&>(_type);
 	cout << "CHECKING UNDERFLOW" << endl;
 	checkCondition(
-		_path && (_value < minValue(iType)),
+		_path && _condition,
 		_location,
 		"Underflow (resulting value less than " + formatNumberReadable(iType.minValue()) + ")",
 		"<result>",
-		&_value
+		&_condition
 	);
+}
+
+void SMTChecker::checkOverflow(smt::Expression _condition, smt::Expression _path, Type const& _type, SourceLocation const& _location)
+{
+	auto const& iType = dynamic_cast<IntegerType const&>(_type);
 	cout << "CHECKING OVERFLOW" << endl;
 	checkCondition(
-		_path && (_value > maxValue(iType)),
+		_path && _condition,
 		_location,
 		"Overflow (resulting value larger than " + formatNumberReadable(iType.maxValue()) + ")",
 		"<result>",
-		&_value
+		&_condition
 	);
 }
 
@@ -371,8 +381,8 @@ void SMTChecker::endVisit(UnaryOperation const& _op)
 	{
 		defineExpr(_op, 0 - expr(_op.subExpression()));
 		auto type = _op.annotation().type;
-		if (type->category() == Type::Category::Integer)
-			addUnderOverflow(expr(_op), type, _op.location());
+//		if (type->category() == Type::Category::Integer)
+//			addUnderOverflow(expr(_op), type, _op.location(), false);
 		break;
 	}
 	default:
@@ -795,13 +805,16 @@ void SMTChecker::arithmeticOperation(BinaryOperation const& _op)
 			/*op == Token::Mul*/ left * right
 		);
 
-		if (_op.getOperator() == Token::Div)
+		value = value % (maxValue(intType) + 1);
+		if (op == Token::Div)
 		{
 			checkCondition(right == 0, _op.location(), "Division by zero", "<result>", &right);
 			m_interface->addAssertion(right != 0);
 		}
-
-		addUnderOverflow(value, _op.annotation().commonType, _op.location());
+		else if (op == Token::Add || op == Token::Mul)
+			addUnderOverflow(value < left, _op.annotation().commonType, _op.location(), true);
+		else //if (op == Token::Sub)
+			addUnderOverflow(value > left, _op.annotation().commonType, _op.location(), false);
 
 		defineExpr(_op, value);
 		break;
@@ -889,14 +902,21 @@ void SMTChecker::assignment(VariableDeclaration const& _variable, Expression con
 	assignment(_variable, expr(_value), _location);
 }
 
-void SMTChecker::assignment(VariableDeclaration const& _variable, smt::Expression const& _value, SourceLocation const& _location)
+void SMTChecker::assignment(VariableDeclaration const& _variable, smt::Expression const& _value, SourceLocation const& /*_location*/)
 {
 	TypePointer type = _variable.type();
+	/*
 	if (type->category() == Type::Category::Integer)
-		addUnderOverflow(_value, type, _location);
+	{
+		addUnderOverflow(_value, type, _location, false);
+		addUnderOverflow(_value, type, _location, true);
+	}
 	else if (type->category() == Type::Category::Address)
-		addUnderOverflow(_value, make_shared<IntegerType>(160), _location);
-	else if (type->category() == Type::Category::Mapping)
+	{
+		addUnderOverflow(_value, make_shared<IntegerType>(160), _location, false);
+		addUnderOverflow(_value, make_shared<IntegerType>(160), _location, true);
+	}
+	else*/ if (type->category() == Type::Category::Mapping)
 		arrayAssignment();
 	m_interface->addAssertion(newValue(_variable) == _value);
 }

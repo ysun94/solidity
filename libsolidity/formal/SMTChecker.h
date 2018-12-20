@@ -137,8 +137,9 @@ private:
 		std::string const& _description
 	);
 	/// Checks that the value is in the range given by the type.
-	void checkUnderOverflow(smt::Expression _value, smt::Expression _path, Type const& _Type, langutil::SourceLocation const& _location);
-	void addUnderOverflow(smt::Expression _value, TypePointer _type, langutil::SourceLocation const& _location);
+	void checkOverflow(smt::Expression _value, smt::Expression _path, Type const& _Type, langutil::SourceLocation const& _location);
+	void checkUnderflow(smt::Expression _value, smt::Expression _path, Type const& _Type, langutil::SourceLocation const& _location);
+	void addUnderOverflow(smt::Expression _value, TypePointer _type, langutil::SourceLocation const& _location, bool _overflow);
 
 
 	std::pair<smt::CheckResult, std::vector<std::string>>
@@ -225,7 +226,7 @@ private:
 	std::vector<smt::Expression> m_pathConditions;
 	langutil::ErrorReporter& m_errorReporter;
 	std::shared_ptr<langutil::Scanner> m_scanner;
-	std::vector<std::tuple<smt::Expression, smt::Expression, TypePointer, langutil::SourceLocation const&>> m_underOverflowTargets;
+	std::vector<std::tuple<smt::Expression, smt::Expression, TypePointer, langutil::SourceLocation const&, bool>> m_underOverflowTargets;
 
 	/// Stores the current path of function calls.
 	std::vector<FunctionDefinition const*> m_functionPath;
