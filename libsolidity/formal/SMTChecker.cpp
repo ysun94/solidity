@@ -386,12 +386,18 @@ void SMTChecker::endVisit(BinaryOperation const& _op)
 void SMTChecker::endVisit(FunctionCall const& _funCall)
 {
 	solAssert(_funCall.annotation().kind != FunctionCallKind::Unset, "");
-	if (_funCall.annotation().kind != FunctionCallKind::FunctionCall)
+	if (_funCall.annotation().kind == FunctionCallKind::StructConstructorCall)
 	{
 		m_errorReporter.warning(
 			_funCall.location(),
 			"Assertion checker does not yet implement this expression."
 		);
+		return;
+	}
+
+	if (_funCall.annotation().kind == FunctionCallKind::TypeConversion)
+	{
+		visitTypeConversion(_funCall);
 		return;
 	}
 
@@ -568,6 +574,22 @@ void SMTChecker::endVisit(Identifier const& _identifier)
 				_identifier.location(),
 				"Assertion checker does not yet support the type of this variable."
 			);
+	}
+}
+
+void SMTChecker::visitTypeConversion(FunctionCall const& _funCall)
+{
+	solAssert(_funCall.annotation().kind == FunctionCallKind::TypeConversion, "");
+	if (_funCall.arguments().size() > 1)
+		m_errorReporter.warning(
+			_funCall.location(),
+			"Assertion checker does not support type conversion with multiple argumets."
+		);
+	else
+	{
+		defineExpr(_funCall, expr(*_funCall.arguments().at(0)));
+		// Restrict the range in case of cast to smaller type.
+		setUnknownValue(*m_expressions.at(&_funCall));
 	}
 }
 
