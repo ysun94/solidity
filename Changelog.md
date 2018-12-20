@@ -4,6 +4,7 @@ Language Features:
 
 
 Compiler Features:
+ * SMTChecker: Support external function calls in an abstract way.
 
 
 Bugfixes:

@@ -103,6 +103,8 @@ private:
 	void arrayIndexAssignment(Assignment const& _assignment);
 	/// Erases information about SMT arrays.
 	void eraseArrayKnowledge();
+	/// Erase information about state variables.
+	void eraseStorageKnowledge();
 
 	/// Division expression in the given type. Requires special treatment because
 	/// of rounding for signed division.

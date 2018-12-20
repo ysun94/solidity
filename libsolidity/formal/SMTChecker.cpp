@@ -412,6 +412,9 @@ void SMTChecker::endVisit(FunctionCall const& _funCall)
 	case FunctionType::Kind::Internal:
 		inlineFunctionCall(_funCall);
 		break;
+	case FunctionType::Kind::External:
+		eraseStorageKnowledge();
+		break;
 	case FunctionType::Kind::KECCAK256:
 	case FunctionType::Kind::ECRecover:
 	case FunctionType::Kind::SHA256:
@@ -466,6 +469,13 @@ void SMTChecker::eraseArrayKnowledge()
 {
 	for (auto const& var: m_variables)
 		if (var.first->annotation().type->category() == Type::Category::Mapping)
+			newValue(*var.first);
+}
+
+void SMTChecker::eraseStorageKnowledge()
+{
+	for (auto const& var: m_variables)
+		if (var.first->isStateVariable())
 			newValue(*var.first);
 }
 
