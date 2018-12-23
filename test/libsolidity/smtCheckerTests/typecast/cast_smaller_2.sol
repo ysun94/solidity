@@ -1,0 +1,11 @@
+pragma experimental SMTChecker;
+
+contract C
+{
+	function f() public pure {
+		uint32 a = 0x12345678;
+		uint16 b = uint16(a); // b will be 0x5678 now
+		// This should fail.
+		assert(b == 0);
+	}
+}

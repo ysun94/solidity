@@ -581,7 +581,12 @@ void SMTChecker::visitTypeConversion(FunctionCall const& _funCall)
 {
 	solAssert(_funCall.annotation().kind == FunctionCallKind::TypeConversion, "");
 	solAssert(_funCall.arguments().size() == 1, "");
-	defineExpr(_funCall, expr(*_funCall.arguments().at(0)));
+	auto argument = _funCall.arguments().at(0);
+	//unsigned argSize = argument->annotation().type->storageBytes();
+	//unsigned castToSize = _funCall.annotation().type->storageBytes();
+	// TODO
+	//if (argSize != castToSize)
+	defineExpr(_funCall, expr(*argument));
 	// Restrict the range in case of cast to smaller type.
 	setUnknownValue(*m_expressions.at(&_funCall));
 }
