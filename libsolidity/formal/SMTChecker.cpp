@@ -580,17 +580,10 @@ void SMTChecker::endVisit(Identifier const& _identifier)
 void SMTChecker::visitTypeConversion(FunctionCall const& _funCall)
 {
 	solAssert(_funCall.annotation().kind == FunctionCallKind::TypeConversion, "");
-	if (_funCall.arguments().size() > 1)
-		m_errorReporter.warning(
-			_funCall.location(),
-			"Assertion checker does not support type conversion with multiple argumets."
-		);
-	else
-	{
-		defineExpr(_funCall, expr(*_funCall.arguments().at(0)));
-		// Restrict the range in case of cast to smaller type.
-		setUnknownValue(*m_expressions.at(&_funCall));
-	}
+	solAssert(_funCall.arguments().size() == 1, "");
+	defineExpr(_funCall, expr(*_funCall.arguments().at(0)));
+	// Restrict the range in case of cast to smaller type.
+	setUnknownValue(*m_expressions.at(&_funCall));
 }
 
 void SMTChecker::visitFunctionIdentifier(Identifier const& _identifier)
