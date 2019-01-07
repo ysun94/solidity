@@ -50,14 +50,41 @@ public:
 	static std::string ipcPath;
 
 private:
+	struct FunctionCallResult {
+		bool success;
+		bytes rawBytes;
+		std::string output;
+	};
+
 	void parseExpectations(std::istream& _stream);
 	bool deploy(std::string const& _contractName, u256 const& _value, bytes const& _arguments);
-	void printCalls(bool _actualResults, std::ostream& _stream, std::string const& _linePrefix, bool const _formatted) const;
+
+	void printCalls(
+		std::ostream& _stream,
+		std::string const& _linePrefix,
+		bool const _formatted,
+		bool const _isResult = false
+	) const;
+
+	void printFunctionCall(
+		ExpectationParser::FunctionCall const& _call,
+		std::ostream& _stream,
+		std::string const& _linePrefix = ""
+	) const;
+
+	void printFunctionCallOutput(
+		std::ostream& _stream,
+		std::string const& _linePrefix = "",
+		bool const _formatted = false,
+		bool const _success = false,
+		std::string _comment = "",
+		std::string _output = ""
+	) const;
 
 	std::string m_source;
-	std::vector<ExpectationParser::FunctionCall> m_calls;
 	std::map<std::string, dev::test::Address> m_libraryAddresses;
-	std::vector<std::pair<bool, bytes>> m_results;
+	std::vector<ExpectationParser::FunctionCall> m_calls;
+	std::vector<FunctionCallResult> m_results;
 };
 
 }

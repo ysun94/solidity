@@ -117,7 +117,13 @@ vector<ExpectationParser::FunctionCall> ExpectationParser::parseFunctionCalls()
 		if (!advanceLine())
 			throw runtime_error("Invalid test expectation. No result specified.");
 
-		call.result = parseFunctionCallResult();
+		call.expectations = parseFunctionCallExpectations();
+
+		if (call.expectations.status)
+			call.expectations.output = "-> " + call.expectations.raw;
+		else
+			call.expectations.output = "REVERT";
+
 		calls.emplace_back(std::move(call));
 	}
 	return calls;
@@ -150,7 +156,7 @@ ExpectationParser::FunctionCallArgs ExpectationParser::parseFunctionCallArgument
 			while (!m_scanner.eol() && m_scanner.current() != '#')
 				m_scanner.advance();
 			arguments.raw = string(argumentBegin, m_scanner.position());
-			arguments.input = stringToBytes(arguments.raw);
+			arguments.rawBytes = stringToBytes(arguments.raw);
 		}
 
 		if (!m_scanner.eol())
@@ -163,9 +169,9 @@ ExpectationParser::FunctionCallArgs ExpectationParser::parseFunctionCallArgument
 	return arguments;
 }
 
-ExpectationParser::FunctionCallResult ExpectationParser::parseFunctionCallResult()
+ExpectationParser::FunctionCallExpectations ExpectationParser::parseFunctionCallExpectations()
 {
-	FunctionCallResult result;
+	FunctionCallExpectations result;
 	if (!m_scanner.eol() && m_scanner.current() == '-')
 	{
 		expectCharacter('-');
@@ -178,7 +184,7 @@ ExpectationParser::FunctionCallResult ExpectationParser::parseFunctionCallResult
 			m_scanner.advance();
 
 		result.raw = string(expectedResultBegin, m_scanner.position());
-		result.output = stringToBytes(result.raw);
+		result.rawBytes = stringToBytes(result.raw);
 		result.status = true;
 
 		if (!m_scanner.eol())

@@ -56,25 +56,32 @@ bool SemanticTest::run(ostream& _stream, string const& _linePrefix, bool const _
 	m_results.clear();
 
 	for (auto const& test: m_calls)
-	{
+	{	
 		bytes output = callContractFunctionWithValueNoEncoding(
 			test.signature,
 			test.costs,
-			test.arguments.input
+			test.arguments.rawBytes
 		);
-		if ((m_transactionSuccessful != test.result.status) || (output != test.result.output))
+
+		if ((m_transactionSuccessful != test.expectations.status) || (output != test.expectations.rawBytes))
 			success = false;
 
-		m_results.emplace_back(m_transactionSuccessful, std::move(output));
+		string resultOutput;
+		if (m_transactionSuccessful)
+			resultOutput = "-> " + ExpectationParser::bytesToString(output);
+		else
+			resultOutput = "REVERT";
+
+		m_results.emplace_back(FunctionCallResult{m_transactionSuccessful, std::move(output), resultOutput});
 	}
 
 	if (!success)
 	{
 		string nextIndentLevel = _linePrefix + "  ";
 		FormattedScope(_stream, _formatted, {BOLD, CYAN}) << _linePrefix << "Expected result:" << endl;
-		printCalls(false, _stream, nextIndentLevel, _formatted);
+		printCalls(_stream, nextIndentLevel, _formatted);
 		FormattedScope(_stream, _formatted, {BOLD, CYAN}) << _linePrefix << "Obtained result:" << endl;
-		printCalls(true, _stream, nextIndentLevel, _formatted);
+		printCalls(_stream, nextIndentLevel, _formatted, true);
 		return false;
 	}
 	return true;
@@ -108,54 +115,66 @@ bool SemanticTest::deploy(string const& _contractName, u256 const& _value, bytes
 }
 
 void SemanticTest::printCalls(
-	bool _actualResults,
 	ostream& _stream,
 	string const& _linePrefix,
-	bool const _formatted
+	bool const _formatted,
+	bool const _isResult
 ) const
 {
 	solAssert(m_calls.size() == m_results.size(), "");
 	for (size_t i = 0; i < m_calls.size(); i++)
 	{
 		auto const& call = m_calls[i];
-		_stream << _linePrefix << call.signature;
-		if (call.costs > u256(0))
-			_stream << "[" << call.costs << "]";
-		if (!call.arguments.raw.empty())
-			_stream << ": " << boost::algorithm::trim_copy(call.arguments.raw);
-		if (!call.arguments.comment.empty())
-			_stream << " # " << call.arguments.comment;
-		_stream << endl;
+		auto const& result = m_results[i];
 
-		string result;
-		auto expectedBytes = ExpectationParser::stringToBytes(call.result.raw);
-		if (_actualResults)
-		{
-			if (m_results[i].first)
-				result = "-> " + ExpectationParser::bytesToString(m_results[i].second);
-			else
-				result = "REVERT";
-		}
+		printFunctionCall(call, _stream, _linePrefix);
+
+		auto expectedBytes = ExpectationParser::stringToBytes(call.expectations.raw);
+		bool expectationsMatch = (result.success == call.expectations.status) && (result.rawBytes == expectedBytes);
+		string output;
+		if (_isResult)
+			output = result.output;
 		else
-		{
-			if (call.result.status)
-				result = "-> " + call.result.raw;
-			else
-				result = "REVERT";
-		}
+			output = call.expectations.output;
 
-		bool expectationsMatch = (m_results[i].first == call.result.status) && (m_results[i].second == expectedBytes);
-
-		_stream << _linePrefix;
-		if (_formatted && !expectationsMatch)
-			_stream << formatting::RED_BACKGROUND;
-		_stream << boost::algorithm::trim_copy(result);
-		if (_formatted && !expectationsMatch)
-			_stream << formatting::RESET;
-		if (!call.result.comment.empty())
-			_stream << " # " << call.result.comment;
-		_stream << endl;
+		printFunctionCallOutput(_stream, _linePrefix, _formatted, expectationsMatch, call.expectations.comment, output);
 	}
+}
+
+void SemanticTest::printFunctionCall(
+	ExpectationParser::FunctionCall const& _call,
+	std::ostream& _stream,
+	std::string const& _linePrefix
+) const
+{
+	_stream << _linePrefix << _call.signature;
+	if (_call.costs > u256(0))
+		_stream << "[" << _call.costs << "]";
+	if (!_call.arguments.raw.empty())
+		_stream << ": " << boost::algorithm::trim_copy(_call.arguments.raw);
+	if (!_call.arguments.comment.empty())
+		_stream << " # " << _call.arguments.comment;
+	_stream << endl;
+}
+
+void SemanticTest::printFunctionCallOutput(
+	std::ostream& _stream,
+	std::string const& _linePrefix,
+	bool const _formatted,
+	bool const _success,
+	std::string _comment,
+	std::string _output
+) const
+{
+	_stream << _linePrefix;
+	if (_formatted && !_success)
+		_stream << formatting::RED_BACKGROUND;
+	_stream << boost::algorithm::trim_copy(_output);
+	if (_formatted && !_success)
+		_stream << formatting::RESET;
+	if (!_comment.empty())
+		_stream << " # " << _comment;
+	_stream << endl;
 }
 
 string SemanticTest::ipcPath;
