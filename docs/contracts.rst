@@ -1348,43 +1348,7 @@ Abstract contracts decouple the definition of a contract from its implementation
 facilitating patterns like the `Template method <https://en.wikipedia.org/wiki/Template_method_pattern>`_ and removing code duplication.
 Abstract contracts are useful in the same way that defining methods in an interface is useful. It is a way for the designer of the abstract contract to say "any child of mine must implement this method".
 
-
-.. index:: ! contract;interface, ! interface contract
-
-.. _interfaces:
-
-**********
-Interfaces
-**********
-
-Interfaces are similar to abstract contracts, but they cannot have any functions implemented. There are further restrictions:
-
-- They cannot inherit other contracts or interfaces.
-- All declared functions must be external.
-- They cannot declare a constructor.
-- They cannot declare state variables.
-
-Some of these restrictions might be lifted in the future.
-
-Interfaces are basically limited to what the Contract ABI can represent, and the conversion between the ABI and
-an interface should be possible without any information loss.
-
-Interfaces are denoted by their own keyword:
-
-::
-
-    pragma solidity ^0.5.0;
-
-    interface Token {
-        enum TokenType { Fungible, NonFungible }
-        struct Coin { string obverse; string reverse; }
-        function transfer(address recipient, uint amount) external;
-    }
-
-Contracts can inherit interfaces as they would inherit other contracts.
-
-Types defined inside interfaces and other contract-like structures
-can be accessed from other contracts: ``Token.TokenType`` or ``Token.Coin``.
+.. include:: contracts/interfaces.rst
 
 .. index:: ! library, callcode, delegatecall
 
