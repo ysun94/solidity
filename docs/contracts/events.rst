@@ -66,8 +66,8 @@ not possible to filter for specific anonymous events by name.
     pragma solidity >=0.4.21 <0.6.0;
 
     contract ClientReceipt {
-        event Deposit(
-            address indexed _from,
+        event Deposi(
+            addres indexed _from,
             bytes32 indexed _id,
             uint _value
         );
